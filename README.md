@@ -91,6 +91,8 @@ types/
 
 - Optional:
   - `NEXT_PUBLIC_GAME_API_BASE_URL` (example: `https://api.example.com`)
+  - `NEXT_PUBLIC_LIVE_SOCKET_URL` (example: `https://api.example.com`)
+  - `NEXT_PUBLIC_LIVE_SOCKET_PATH` (default: `/live/socket.io`)
   - If omitted, the app will call relative paths (same domain), e.g. `/api/truth-dare`.
 
 ---

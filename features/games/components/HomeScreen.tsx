@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import InfoDialog from '@/components/ui/InfoDialog';
 import { HOW_TO_PLAY } from '@/features/games/constants/howToPlay';
 import { useDialog } from '@/hooks/useDialog';
@@ -24,6 +25,9 @@ export default function HomeScreen({ isActive, onOpenGame }: HomeScreenProps) {
       </div>
 
       <div className="menu">
+        <Link href="/live" className="menu-link-btn">
+          🔴 GameKhane Live
+        </Link>
         <button onClick={() => onOpenGame('mostLikely')}>😂 Who’s Most Likely To</button>
         <button onClick={() => onOpenGame('truthDare')}>🃏 Truth or Dare</button>
         <button onClick={() => onOpenGame('wouldRather')}>🤔 Would You Rather</button>
