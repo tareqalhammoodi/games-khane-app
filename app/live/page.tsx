@@ -50,7 +50,7 @@ export default function LiveHomePage() {
         <div className="app">
           <div className="live-page-actions">
             <button type="button" className="back live-back-btn" onClick={handleBackToMain}>
-              Back to Main
+              ← Back to Main
             </button>
           </div>
           <LiveHomeScreen
@@ -72,7 +72,7 @@ export default function LiveHomePage() {
       <div className="app">
         <div className="live-page-actions">
           <button type="button" className="back live-back-btn" onClick={handleBackToMain}>
-            Back to Main
+            ← Back to Main
           </button>
         </div>
         <HostScreen

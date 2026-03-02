@@ -50,7 +50,7 @@ export default function LiveRoomPage({ roomCode }: LiveRoomPageProps) {
         <div className="app">
           <div className="live-page-actions">
             <button type="button" className="back live-back-btn" onClick={handleBackToMain}>
-              Back to Main
+              ← Back to Main
             </button>
           </div>
           <PlayerJoinScreen
@@ -128,7 +128,7 @@ export default function LiveRoomPage({ roomCode }: LiveRoomPageProps) {
               Start Over
             </button>
             <button type="button" className="back live-back-btn" onClick={handleBackToMain}>
-              Back to Main
+              ← Back to Main
             </button>
           </div>
         </section>
