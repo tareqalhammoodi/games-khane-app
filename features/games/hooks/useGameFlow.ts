@@ -1,5 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { getGameDefinition, getRandomGameItem } from '@/features/games/services/gameContentService';
+import {
+  getGameDefinition,
+  getUniqueGameItem,
+  QuestionPoolExhaustedError
+} from '@/features/games/services/gameContentService';
 import type { AppScreen, GameDefinition, GameId, PlayableId } from '@/types/game';
 
 interface UseGameFlowResult {
@@ -12,12 +16,36 @@ interface UseGameFlowResult {
   goHome: () => void;
 }
 
+function createEmptySeenPromptMap(): Record<GameId, string[]> {
+  return {
+    mostLikely: [],
+    truthDare: [],
+    wouldRather: [],
+    challenge: [],
+    conversation: [],
+    tonight: []
+  };
+}
+
+function createEmptySeenContentMap(): Record<GameId, string[]> {
+  return {
+    mostLikely: [],
+    truthDare: [],
+    wouldRather: [],
+    challenge: [],
+    conversation: [],
+    tonight: []
+  };
+}
+
 export function useGameFlow(): UseGameFlowResult {
   const [screen, setScreen] = useState<AppScreen>('home');
   const [currentGame, setCurrentGame] = useState<GameId | null>(null);
   const [gameText, setGameText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const requestIdRef = useRef(0);
+  const seenPromptIdsRef = useRef<Record<GameId, string[]>>(createEmptySeenPromptMap());
+  const seenPromptContentsRef = useRef<Record<GameId, string[]>>(createEmptySeenContentMap());
 
   const currentConfig = useMemo(
     () => (currentGame ? getGameDefinition(currentGame) : null),
@@ -30,13 +58,55 @@ export function useGameFlow(): UseGameFlowResult {
     setIsLoading(true);
 
     try {
-      const nextText = await getRandomGameItem(gameId);
+      const seenIds = seenPromptIdsRef.current[gameId];
+      const seenContents = seenPromptContentsRef.current[gameId];
+      const nextPrompt = await getUniqueGameItem(gameId, {
+        excludeIds: seenIds,
+        excludeContents: seenContents
+      });
+
+      if (nextPrompt.id && !seenIds.includes(nextPrompt.id)) {
+        seenIds.push(nextPrompt.id);
+      }
+      if (nextPrompt.content && !seenContents.includes(nextPrompt.content)) {
+        seenContents.push(nextPrompt.content);
+      }
+
       if (requestIdRef.current !== requestId) {
         return;
       }
 
-      setGameText(nextText);
-    } catch {
+      setGameText(nextPrompt.content);
+    } catch (error) {
+      if (error instanceof QuestionPoolExhaustedError) {
+        seenPromptIdsRef.current[gameId] = [];
+        seenPromptContentsRef.current[gameId] = [];
+
+        try {
+          const nextPrompt = await getUniqueGameItem(gameId);
+          if (nextPrompt.id) {
+            seenPromptIdsRef.current[gameId].push(nextPrompt.id);
+          }
+          if (nextPrompt.content) {
+            seenPromptContentsRef.current[gameId].push(nextPrompt.content);
+          }
+
+          if (requestIdRef.current !== requestId) {
+            return;
+          }
+
+          setGameText(nextPrompt.content);
+          return;
+        } catch {
+          if (requestIdRef.current !== requestId) {
+            return;
+          }
+
+          setGameText('Could not load a question. Tap again.');
+          return;
+        }
+      }
+
       if (requestIdRef.current !== requestId) {
         return;
       }
@@ -63,6 +133,8 @@ export function useGameFlow(): UseGameFlowResult {
       return;
     }
 
+    seenPromptIdsRef.current[id] = [];
+    seenPromptContentsRef.current[id] = [];
     setCurrentGame(id);
     setScreen('game');
     setGameText('');

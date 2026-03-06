@@ -24,7 +24,7 @@ async function fetchWithTimeout(url: string, timeoutMs = REQUEST_TIMEOUT_MS): Pr
   }
 }
 
-export async function proxyGameApiRequest(path: string) {
+export async function proxyGameApiRequest(path: string, request?: Request) {
   const baseUrl = getGameApiBaseUrl();
   if (!baseUrl) {
     return NextResponse.json(
@@ -37,8 +37,15 @@ export async function proxyGameApiRequest(path: string) {
   }
 
   try {
-    const upstreamUrl = new URL(path, baseUrl).toString();
-    const upstreamResponse = await fetchWithTimeout(upstreamUrl);
+    const upstreamUrl = new URL(path, baseUrl);
+    if (request) {
+      const incomingUrl = new URL(request.url);
+      incomingUrl.searchParams.forEach((value, key) => {
+        upstreamUrl.searchParams.append(key, value);
+      });
+    }
+
+    const upstreamResponse = await fetchWithTimeout(upstreamUrl.toString());
 
     const payload = await upstreamResponse.json().catch(() => null);
     if (!upstreamResponse.ok) {
