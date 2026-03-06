@@ -9,6 +9,7 @@ const REQUEST_TIMEOUT_MS = 10000;
 
 interface RandomGameItemOptions {
   excludeIds?: string[];
+  spicyMode?: boolean;
 }
 
 interface UniqueRandomGameItemOptions extends RandomGameItemOptions {
@@ -63,14 +64,17 @@ function extractErrorCode(payload: unknown): string | null {
 }
 
 function buildRequestUrl(endpoint: string, options: RandomGameItemOptions): string {
-  const { excludeIds = [] } = options;
-  if (excludeIds.length === 0) {
+  const { excludeIds = [], spicyMode = false } = options;
+  if (excludeIds.length === 0 && !spicyMode) {
     return endpoint;
   }
 
   const params = new URLSearchParams();
   const uniqueIds = [...new Set(excludeIds)];
   uniqueIds.forEach((id) => params.append('excludeIds', id));
+  if (spicyMode) {
+    params.append('spicy', 'true');
+  }
 
   return `${endpoint}?${params.toString()}`;
 }
@@ -122,9 +126,13 @@ export async function getUniqueGameItem(
   const excludedIds = new Set(options.excludeIds ?? []);
   const excludedContents = new Set((options.excludeContents ?? []).map(normalizePromptContent));
   const maxAttempts = Math.max(1, options.maxAttempts ?? 64);
+  const spicyMode = options.spicyMode ?? false;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-    const prompt = await getRandomGameItem(gameId, { excludeIds: [...excludedIds] });
+    const prompt = await getRandomGameItem(gameId, {
+      excludeIds: [...excludedIds],
+      spicyMode
+    });
 
     if (prompt.id) {
       excludedIds.add(prompt.id);

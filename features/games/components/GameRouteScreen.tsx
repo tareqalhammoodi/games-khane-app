@@ -17,6 +17,7 @@ export default function GameRouteScreen({ gameId }: GameRouteScreenProps) {
   const router = useRouter();
   const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isSpicyMode, setIsSpicyMode] = useState(false);
   const requestIdRef = useRef(0);
   const seenPromptIdsRef = useRef<string[]>([]);
   const seenPromptContentsRef = useRef<string[]>([]);
@@ -33,7 +34,8 @@ export default function GameRouteScreen({ gameId }: GameRouteScreenProps) {
       const seenContents = seenPromptContentsRef.current;
       const nextPrompt = await getUniqueGameItem(gameId, {
         excludeIds: seenIds,
-        excludeContents: seenContents
+        excludeContents: seenContents,
+        spicyMode: isSpicyMode
       });
 
       if (nextPrompt.id && !seenIds.includes(nextPrompt.id)) {
@@ -54,7 +56,7 @@ export default function GameRouteScreen({ gameId }: GameRouteScreenProps) {
         seenPromptContentsRef.current = [];
 
         try {
-          const nextPrompt = await getUniqueGameItem(gameId);
+          const nextPrompt = await getUniqueGameItem(gameId, { spicyMode: isSpicyMode });
           if (nextPrompt.id) {
             seenPromptIdsRef.current.push(nextPrompt.id);
           }
@@ -88,7 +90,7 @@ export default function GameRouteScreen({ gameId }: GameRouteScreenProps) {
         setIsLoading(false);
       }
     }
-  }, [gameId]);
+  }, [gameId, isSpicyMode]);
 
   useEffect(() => {
     seenPromptIdsRef.current = [];
@@ -104,9 +106,24 @@ export default function GameRouteScreen({ gameId }: GameRouteScreenProps) {
     router.push('/');
   }, [router]);
 
+  const handleSpicyToggle = useCallback(() => {
+    setIsSpicyMode((previous) => !previous);
+  }, []);
+
   return (
     <div className="screen game active" id="gameScreen">
       <h1 id="gameTitle">{config.title}</h1>
+      <div className="game-mode-toggle">
+        <span className="game-mode-label">Spicy Mode</span>
+        <button
+          type="button"
+          className={`game-mode-btn ${isSpicyMode ? 'game-mode-btn--active' : ''}`}
+          onClick={handleSpicyToggle}
+          aria-pressed={isSpicyMode}
+        >
+          {isSpicyMode ? 'ON' : 'OFF'}
+        </button>
+      </div>
       <div className="card" id="gameText" aria-live="polite">
         {text || (isLoading ? 'Loading...' : '')}
       </div>
