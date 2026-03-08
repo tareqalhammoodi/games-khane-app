@@ -9,6 +9,7 @@ export default function InfoDialog({
   title,
   intro,
   steps,
+  sections = [],
   actionLabel,
   titleId = 'infoDialogTitle'
 }: InfoDialogProps) {
@@ -38,11 +39,24 @@ export default function InfoDialog({
         <h2 id={titleId}>{title}</h2>
         <p className="info-dialog__intro">{intro}</p>
 
-        <ol className="info-dialog__steps">
-          {steps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
+        {steps.length > 0 ? (
+          <ol className="info-dialog__steps">
+            {steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        ) : null}
+
+        {sections.map((section) => (
+          <section key={section.heading} className="info-dialog__section">
+            <h3>{section.heading}</h3>
+            <ol className="info-dialog__steps">
+              {section.steps.map((step) => (
+                <li key={`${section.heading}-${step}`}>{step}</li>
+              ))}
+            </ol>
+          </section>
+        ))}
 
         <button type="button" className="info-dialog__action" onClick={onClose}>
           {actionLabel}

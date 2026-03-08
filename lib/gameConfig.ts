@@ -22,7 +22,7 @@ export const gameConfig: Record<GameId, GameDefinition> = {
     endpoint: '/api/challenge'
   },
   conversation: {
-    title: '🧠 Conversation Starter',
+    title: '💭 Chit-Chat',
     buttonText: 'Next',
     endpoint: '/api/conversation'
   },

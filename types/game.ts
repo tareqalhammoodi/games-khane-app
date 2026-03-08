@@ -7,7 +7,7 @@ export type GameId =
   | 'tonight';
 
 export type AppScreen = 'home' | 'game' | 'wheel';
-export type PlayableId = GameId | 'wheel';
+export type PlayableId = GameId | 'wheel' | 'tiltGuess' | 'liveQuiz';
 
 export type GameApiEndpoint =
   | '/api/truth-dare'

@@ -7,5 +7,7 @@ export const GAME_ROUTES: Record<PlayableId, string> = {
   challenge: '/challenge',
   conversation: '/conversation',
   tonight: '/tonight',
+  liveQuiz: '/live',
+  tiltGuess: '/tilt-guess',
   wheel: '/wheel'
 } as const;

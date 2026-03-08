@@ -133,6 +133,10 @@ export function useGameFlow(): UseGameFlowResult {
       return;
     }
 
+    if (id === 'tiltGuess' || id === 'liveQuiz') {
+      return;
+    }
+
     seenPromptIdsRef.current[id] = [];
     seenPromptContentsRef.current[id] = [];
     setCurrentGame(id);

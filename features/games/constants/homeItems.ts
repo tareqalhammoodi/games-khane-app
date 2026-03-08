@@ -5,7 +5,7 @@ export interface HomeItem {
   icon: string;
   title: string;
   subtitle: string;
-  accent: string;
+  accent?: string;
 }
 
 export const HOME_ITEMS: HomeItem[] = [
@@ -40,7 +40,7 @@ export const HOME_ITEMS: HomeItem[] = [
   {
     id: 'conversation',
     icon: '🧠',
-    title: 'Random Topics to Talk About!',
+    title: 'Chit-Chat Topics to Talk About!',
     subtitle: 'Break the ice.',
     accent: '#a78bfa'
   },
@@ -52,10 +52,21 @@ export const HOME_ITEMS: HomeItem[] = [
     accent: '#f59e0b'
   },
   {
+    id: 'liveQuiz',
+    icon: '🍬',
+    title: 'GameKhane Live',
+    subtitle: 'Host. Join. Compete. Test your knowledge together!',
+  },
+  {
+    id: 'tiltGuess',
+    icon: '📱',
+    title: 'Tilt & Guess',
+    subtitle: 'Hold the phone to your forehead while friends give clues.',
+  },
+  {
     id: 'wheel',
     icon: '☸️',
     title: 'Spin The Wheel',
     subtitle: 'Let luck decide what to play and who goes next.',
-    accent: '#4ecdc4'
   }
 ];
