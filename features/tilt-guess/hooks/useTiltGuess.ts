@@ -27,18 +27,27 @@ interface UseTiltGuessResult {
   requestMotionPermission: () => Promise<boolean>;
 }
 
-const ROUND_DURATION_SECONDS = 60;
-const WORD_SETTLE_MS = 1000;
-const GESTURE_COOLDOWN_MS = 650;
-const FEEDBACK_DURATION_MS = 220;
-const CORRECT_BETA_THRESHOLD = 60;
-const SKIP_BETA_THRESHOLD = -60;
-
+type DetectorState = 'NEUTRAL' | 'LOCKED';
 type MotionPermissionResponse = 'granted' | 'denied';
 
 type IOSMotionPermissionRequest = {
   requestPermission?: () => Promise<MotionPermissionResponse>;
 };
+
+const ROUND_DURATION_SECONDS = 60;
+const WORD_LOCK_TIME_MS = 1200;
+const GESTURE_COOLDOWN_MS = 800;
+const FEEDBACK_DURATION_MS = 220;
+const MOTION_PERMISSION_STORAGE_KEY = 'tilt_guess_motion_permission_granted';
+
+// Gravity-Z thresholds (Heads Up style).
+const FACE_DOWN_THRESHOLD = -7; // Correct
+const FACE_UP_THRESHOLD = 7; // Skip
+const NEUTRAL_MIN = -3;
+const NEUTRAL_MAX = 3;
+
+// Low-pass filter: keeps motion responsive while reducing jitter.
+const SMOOTHING_ALPHA = 0.2;
 
 const getMotionPermissionRequest = (): (() => Promise<MotionPermissionResponse>) | null => {
   if (typeof window === 'undefined') {
@@ -48,6 +57,37 @@ const getMotionPermissionRequest = (): (() => Promise<MotionPermissionResponse>)
   const candidate = window.DeviceMotionEvent as (typeof DeviceMotionEvent & IOSMotionPermissionRequest) | undefined;
   return typeof candidate?.requestPermission === 'function' ? candidate.requestPermission : null;
 };
+
+const readStoredMotionPermissionGranted = (): boolean => {
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  try {
+    return window.localStorage.getItem(MOTION_PERMISSION_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+};
+
+const storeMotionPermissionGranted = (granted: boolean): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    if (granted) {
+      window.localStorage.setItem(MOTION_PERMISSION_STORAGE_KEY, 'true');
+      return;
+    }
+
+    window.localStorage.removeItem(MOTION_PERMISSION_STORAGE_KEY);
+  } catch {
+    // Ignore storage failures (private/restricted contexts).
+  }
+};
+
+const isNeutral = (z: number): boolean => z > NEUTRAL_MIN && z < NEUTRAL_MAX;
 
 export function useTiltGuess(): UseTiltGuessResult {
   const [currentWord, setCurrentWord] = useState('');
@@ -66,8 +106,13 @@ export function useTiltGuess(): UseTiltGuessResult {
   const wordsRef = useRef<string[]>([]);
   const wordIndexRef = useRef(0);
   const wordShownAtRef = useRef(0);
-  const lastGestureAtRef = useRef(0);
   const currentWordRef = useRef('');
+
+  // High-frequency detector state is kept in refs to avoid re-renders.
+  const detectorStateRef = useRef<DetectorState>('NEUTRAL');
+  const lastGestureAtRef = useRef(0);
+  const smoothedZRef = useRef(0);
+  const hasSmoothedZRef = useRef(false);
 
   const clearTimer = useCallback(() => {
     if (timerRef.current) {
@@ -81,6 +126,13 @@ export function useTiltGuess(): UseTiltGuessResult {
       clearTimeout(feedbackTimeoutRef.current);
       feedbackTimeoutRef.current = null;
     }
+  }, []);
+
+  const resetDetector = useCallback(() => {
+    detectorStateRef.current = 'NEUTRAL';
+    lastGestureAtRef.current = 0;
+    smoothedZRef.current = 0;
+    hasSmoothedZRef.current = false;
   }, []);
 
   const showFeedback = useCallback(
@@ -155,23 +207,26 @@ export function useTiltGuess(): UseTiltGuessResult {
   const requestMotionPermission = useCallback(async (): Promise<boolean> => {
     if (!canRequestMotionPermission) {
       setMotionPermission('granted');
+      storeMotionPermissionGranted(true);
       return true;
     }
 
     const requestPermission = getMotionPermissionRequest();
-
     if (!requestPermission) {
       setMotionPermission('granted');
+      storeMotionPermissionGranted(true);
       return true;
     }
 
     try {
-      const response = await requestPermission();
-      const granted = response === 'granted';
+      const result = await requestPermission();
+      const granted = result === 'granted';
       setMotionPermission(granted ? 'granted' : 'denied');
+      storeMotionPermissionGranted(granted);
       return granted;
     } catch {
       setMotionPermission('denied');
+      storeMotionPermissionGranted(false);
       return false;
     }
   }, [canRequestMotionPermission]);
@@ -182,8 +237,7 @@ export function useTiltGuess(): UseTiltGuessResult {
         return true;
       }
 
-      const permissionRequired = canRequestMotionPermission;
-      if (permissionRequired && motionPermission !== 'granted') {
+      if (canRequestMotionPermission && motionPermission !== 'granted') {
         return false;
       }
 
@@ -201,15 +255,12 @@ export function useTiltGuess(): UseTiltGuessResult {
 
         wordsRef.current = words;
         wordIndexRef.current = 0;
-        wordShownAtRef.current = Date.now();
-        lastGestureAtRef.current = 0;
-
         setCorrectCount(0);
         setSkipCount(0);
         setWordHistory([]);
         setTimeRemaining(ROUND_DURATION_SECONDS);
         setGameStatus('playing');
-
+        resetDetector();
         advanceWord();
 
         timerRef.current = setInterval(() => {
@@ -232,7 +283,15 @@ export function useTiltGuess(): UseTiltGuessResult {
         setIsStarting(false);
       }
     },
-    [advanceWord, canRequestMotionPermission, clearFeedbackTimeout, clearTimer, gameStatus, motionPermission],
+    [
+      advanceWord,
+      canRequestMotionPermission,
+      clearFeedbackTimeout,
+      clearTimer,
+      gameStatus,
+      motionPermission,
+      resetDetector,
+    ],
   );
 
   const resetGame = useCallback(() => {
@@ -241,9 +300,9 @@ export function useTiltGuess(): UseTiltGuessResult {
 
     wordsRef.current = [];
     wordIndexRef.current = 0;
-    wordShownAtRef.current = 0;
-    lastGestureAtRef.current = 0;
     currentWordRef.current = '';
+    wordShownAtRef.current = 0;
+    resetDetector();
 
     setCurrentWord('');
     setTimeRemaining(ROUND_DURATION_SECONDS);
@@ -253,12 +312,20 @@ export function useTiltGuess(): UseTiltGuessResult {
     setGameStatus('idle');
     setFeedback(null);
     setIsStarting(false);
-  }, [clearFeedbackTimeout, clearTimer]);
+  }, [clearFeedbackTimeout, clearTimer, resetDetector]);
 
   useEffect(() => {
     const permissionRequired = getMotionPermissionRequest() !== null;
     setCanRequestMotionPermission(permissionRequired);
-    setMotionPermission(permissionRequired ? 'required' : 'granted');
+
+    if (!permissionRequired) {
+      setMotionPermission('granted');
+      storeMotionPermissionGranted(true);
+      return;
+    }
+
+    const alreadyGranted = readStoredMotionPermissionGranted();
+    setMotionPermission(alreadyGranted ? 'granted' : 'required');
   }, []);
 
   useEffect(() => {
@@ -266,38 +333,63 @@ export function useTiltGuess(): UseTiltGuessResult {
       return;
     }
 
-    const onDeviceOrientation = (event: DeviceOrientationEvent) => {
-      const beta = event.beta;
-
-      if (typeof beta !== 'number') {
+    const onMotion = (event: DeviceMotionEvent) => {
+      const rawZ = event.accelerationIncludingGravity?.z;
+      if (typeof rawZ !== 'number') {
         return;
       }
 
       const now = Date.now();
-      if (now - wordShownAtRef.current < WORD_SETTLE_MS) {
+
+      // Low-pass smoothing to remove jitter.
+      if (!hasSmoothedZRef.current) {
+        smoothedZRef.current = rawZ;
+        hasSmoothedZRef.current = true;
+      } else {
+        smoothedZRef.current = smoothedZRef.current * (1 - SMOOTHING_ALPHA) + rawZ * SMOOTHING_ALPHA;
+      }
+
+      const z = smoothedZRef.current;
+
+      // Word stabilization lock to avoid accidental immediate fires.
+      if (now - wordShownAtRef.current < WORD_LOCK_TIME_MS) {
         return;
       }
 
+      // Cooldown between gestures.
       if (now - lastGestureAtRef.current < GESTURE_COOLDOWN_MS) {
         return;
       }
 
-      if (beta > CORRECT_BETA_THRESHOLD) {
+      // Reset detector only when phone returns close to vertical neutral.
+      if (isNeutral(z)) {
+        detectorStateRef.current = 'NEUTRAL';
+        return;
+      }
+
+      // Gestures fire only from NEUTRAL -> tilt transition.
+      if (detectorStateRef.current !== 'NEUTRAL') {
+        return;
+      }
+
+      if (z < FACE_DOWN_THRESHOLD) {
+        detectorStateRef.current = 'LOCKED';
         lastGestureAtRef.current = now;
         handleCorrect();
         return;
       }
 
-      if (beta < SKIP_BETA_THRESHOLD) {
+      if (z > FACE_UP_THRESHOLD) {
+        detectorStateRef.current = 'LOCKED';
         lastGestureAtRef.current = now;
         handleSkip();
       }
     };
 
-    window.addEventListener('deviceorientation', onDeviceOrientation);
+    window.addEventListener('devicemotion', onMotion);
 
     return () => {
-      window.removeEventListener('deviceorientation', onDeviceOrientation);
+      window.removeEventListener('devicemotion', onMotion);
     };
   }, [gameStatus, handleCorrect, handleSkip]);
 
