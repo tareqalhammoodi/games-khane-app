@@ -79,6 +79,8 @@ types/
   - `/api/challenge`
   - `/api/conversation`
   - `/api/tonight`
+  - `/api/riddles`
+  - `/api/emoji-decode`
 - Game API response shape expected by the client:
   - `{ data: { id, type, content, createdAt } }`
 - Wheel canvas logic was migrated to a client component using refs + effects.

@@ -30,5 +30,17 @@ export const gameConfig: Record<GameId, GameDefinition> = {
     title: '🎯 What Are We Doing Tonight?',
     buttonText: 'Decide',
     endpoint: '/api/tonight'
+  },
+  riddles: {
+    title: '🧩 Easy Riddles',
+    buttonText: 'Next',
+    endpoint: '/api/riddles',
+    supportsSpicy: false
+  },
+  emojiDecode: {
+    title: '🎬 Emoji Decode',
+    buttonText: 'Next',
+    endpoint: '/api/emoji-decode',
+    supportsSpicy: false
   }
 };

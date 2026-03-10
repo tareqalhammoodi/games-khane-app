@@ -23,7 +23,9 @@ function createEmptySeenPromptMap(): Record<GameId, string[]> {
     wouldRather: [],
     challenge: [],
     conversation: [],
-    tonight: []
+    tonight: [],
+    riddles: [],
+    emojiDecode: []
   };
 }
 
@@ -34,7 +36,9 @@ function createEmptySeenContentMap(): Record<GameId, string[]> {
     wouldRather: [],
     challenge: [],
     conversation: [],
-    tonight: []
+    tonight: [],
+    riddles: [],
+    emojiDecode: []
   };
 }
 

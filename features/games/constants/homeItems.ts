@@ -52,6 +52,20 @@ export const HOME_ITEMS: HomeItem[] = [
     accent: '#f59e0b'
   },
   {
+    id: 'riddles',
+    icon: '🧩',
+    title: 'Quick Brain Teaser Riddles!',
+    subtitle: 'Think fast.',
+    accent: '#c3d334ff'
+  },
+  {
+    id: 'emojiDecode',
+    icon: '🎬',
+    title: 'Decode the Emoji Game!',
+    subtitle: 'Guess the meaning.',
+    accent: '#72b7f4ff'
+  },
+  {
     id: 'liveQuiz',
     icon: '🍬',
     title: 'GameKhane Live',
