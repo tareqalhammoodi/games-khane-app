@@ -1,16 +1,16 @@
-import type { Question } from '@/features/live/types/live';
+import type { Question } from '@/features/live/types';
 
-interface ResultsScreenProps {
+interface QuizResultsScreenProps {
   question: Question | null;
   correctOptionIndex: number | null;
   voteCounts: number[];
 }
 
-export default function ResultsScreen({
+export default function QuizResultsScreen({
   question,
   correctOptionIndex,
   voteCounts
-}: ResultsScreenProps) {
+}: QuizResultsScreenProps) {
   const totalVotes = voteCounts.reduce((sum, count) => sum + count, 0);
 
   return (

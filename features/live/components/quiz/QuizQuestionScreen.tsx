@@ -1,10 +1,11 @@
-import type { Question } from '@/features/live/types/live';
+import type { Question } from '@/features/live/types';
 
-interface QuestionScreenProps {
+interface QuizQuestionScreenProps {
   question: Question;
   questionIndex: number;
   totalQuestions: number;
   secondsLeft: number;
+  timerTotalSeconds: number;
   hasAnswered: boolean;
   selectedOptionIndex: number | null;
   answeredCount: number;
@@ -12,18 +13,20 @@ interface QuestionScreenProps {
   onSelectOption: (optionIndex: number) => void;
 }
 
-export default function QuestionScreen({
+export default function QuizQuestionScreen({
   question,
   questionIndex,
   totalQuestions,
   secondsLeft,
+  timerTotalSeconds,
   hasAnswered,
   selectedOptionIndex,
   answeredCount,
   totalPlayers,
   onSelectOption
-}: QuestionScreenProps) {
-  const timerWidth = `${Math.max(0, Math.min(100, (secondsLeft / 15) * 100))}%`;
+}: QuizQuestionScreenProps) {
+  const total = Math.max(1, timerTotalSeconds || 15);
+  const timerWidth = `${Math.max(0, Math.min(100, (secondsLeft / total) * 100))}%`;
 
   return (
     <section className="live-shell">

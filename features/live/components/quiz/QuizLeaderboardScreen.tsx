@@ -1,10 +1,10 @@
-import type { Player } from '@/features/live/types/live';
+import type { Player } from '@/features/live/types';
 
-interface LeaderboardScreenProps {
+interface QuizLeaderboardScreenProps {
   players: Player[];
 }
 
-export default function LeaderboardScreen({ players }: LeaderboardScreenProps) {
+export default function QuizLeaderboardScreen({ players }: QuizLeaderboardScreenProps) {
   return (
     <section className="live-shell">
       <h1 className="live-title">Leaderboard</h1>

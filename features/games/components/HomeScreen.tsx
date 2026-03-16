@@ -18,7 +18,8 @@ export default function HomeScreen({ isActive, onOpenGame }: HomeScreenProps) {
   const wheelItem = HOME_ITEMS.find((item) => item.id === 'wheel');
   const tiltGuessItem = HOME_ITEMS.find((item) => item.id === 'tiltGuess');
   const liveQuizItem = HOME_ITEMS.find((item) => item.id === 'liveQuiz');
-  const gameItems = HOME_ITEMS.filter((item) => item.id !== 'wheel' && item.id !== 'tiltGuess' && item.id !== 'liveQuiz');
+  const spotlightItem = HOME_ITEMS.find((item) => item.id === 'spotlight');
+  const gameItems = HOME_ITEMS.filter((item) => item.id !== 'wheel' && item.id !== 'tiltGuess' && item.id !== 'liveQuiz' && item.id !== 'spotlight');
 
   return (
     <div className={`screen ${isActive ? "active" : ""}`} id="home">
@@ -47,6 +48,21 @@ export default function HomeScreen({ isActive, onOpenGame }: HomeScreenProps) {
             <p>{liveQuizItem.subtitle}</p>
           </div>
           <Link href="/live" className="home-live-card__cta">
+            Play
+          </Link>
+        </section>
+      ) : null}
+
+      {spotlightItem ? (
+        <section className="home-live-card home-live-card--spotlight">
+          <div>
+            <p className="home-live-pill">SPOTLIGHT</p>
+            <h2>
+              {spotlightItem.icon} {spotlightItem.title}
+            </h2>
+            <p>{spotlightItem.subtitle}</p>
+          </div>
+          <Link href="/spotlight" className="home-live-card__cta">
             Play
           </Link>
         </section>

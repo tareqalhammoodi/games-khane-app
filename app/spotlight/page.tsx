@@ -2,12 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import LiveHomeScreen from '@/features/live/components/common/LiveHomeScreen';
-import QuizLeaderboardScreen from '@/features/live/components/quiz/QuizLeaderboardScreen';
-import QuizHostScreen from '@/features/live/components/quiz/QuizHostScreen';
-import QuizResultsScreen from '@/features/live/components/quiz/QuizResultsScreen';
+import SpotlightHostScreen from '@/features/live/components/spotlight/SpotlightHostScreen';
+import SpotlightResultsScreen from '@/features/live/components/spotlight/SpotlightResultsScreen';
 import { useLiveGame } from '@/features/live/hooks/useLiveGame';
 
-export default function LiveHomePage() {
+export default function SpotlightHomePage() {
   const router = useRouter();
   const {
     isConnected,
@@ -16,28 +15,34 @@ export default function LiveHomePage() {
     role,
     status,
     players,
-    leaderboard,
-    currentQuestion,
-    voteCounts,
-    correctOptionIndex,
-    answeredCount,
-    totalPlayers,
+    spotlightNickname,
+    spotlightRoundIndex,
+    spotlightSubmittedCount,
+    spotlightTotalWriters,
+    spotlightReactionCounts,
+    spotlightReactionAnswered,
+    spotlightTotalReactors,
+    spotlightGuessAnswered,
+    spotlightTotalGuessers,
+    spotlightQuestionText,
+    spotlightResults,
+    spotlightSkipReason,
     isCreatingRoom,
     setRoomCode,
     createRoom,
     startGame,
-    nextQuestion,
-    endGame
+    endGame,
+    nextSpotlightRound
   } = useLiveGame();
 
   const handleJoinGame = () => {
     if (roomCode.length === 6) {
-      router.push(`/live/${roomCode}`);
+      router.push(`/spotlight/${roomCode}`);
     }
   };
 
   const handleStartOver = () => {
-    createRoom({ mode: 'quiz' });
+    createRoom({ mode: 'spotlight' });
   };
 
   const handleBackToMain = () => {
@@ -61,10 +66,10 @@ export default function LiveHomePage() {
             onRoomCodeChange={setRoomCode}
             onHostGame={createRoom}
             onJoinGame={handleJoinGame}
-            availableModes={['quiz']}
-            defaultMode="quiz"
-            title="GameKhane Live"
-            subtitle="Real-time quiz rooms for friends and teams."
+            availableModes={['spotlight']}
+            defaultMode="spotlight"
+            title="Hot Seat Live"
+            subtitle="Anonymous questions, reactions, and guess who asked."
           />
         </div>
       </main>
@@ -79,29 +84,31 @@ export default function LiveHomePage() {
             ← Back to Main
           </button>
         </div>
-        <QuizHostScreen
+
+        <SpotlightHostScreen
           roomCode={roomCode}
           status={status}
           players={players}
-          questionText={currentQuestion?.prompt ?? null}
-          voteCounts={voteCounts}
-          answeredCount={answeredCount}
-          totalPlayers={totalPlayers}
+          spotlightName={spotlightNickname}
+          roundIndex={spotlightRoundIndex}
+          submittedCount={spotlightSubmittedCount}
+          totalWriters={spotlightTotalWriters}
+          reactionCounts={spotlightReactionCounts}
+          reactionAnswered={spotlightReactionAnswered}
+          totalReactors={spotlightTotalReactors}
+          guessAnswered={spotlightGuessAnswered}
+          totalGuessers={spotlightTotalGuessers}
+          questionText={spotlightQuestionText}
+          skipReason={spotlightSkipReason}
           onStartGame={startGame}
-          onNextQuestion={nextQuestion}
+          onNextRound={nextSpotlightRound}
           onEndGame={endGame}
           onStartOver={handleStartOver}
         />
 
         {status === 'results' ? (
-          <QuizResultsScreen
-            question={currentQuestion}
-            correctOptionIndex={correctOptionIndex}
-            voteCounts={voteCounts}
-          />
+          <SpotlightResultsScreen results={spotlightResults} skipReason={spotlightSkipReason} />
         ) : null}
-
-        {status === 'results' || status === 'finished' ? <QuizLeaderboardScreen players={leaderboard} /> : null}
 
         {errorMessage ? <p className="live-error">{errorMessage}</p> : null}
       </div>

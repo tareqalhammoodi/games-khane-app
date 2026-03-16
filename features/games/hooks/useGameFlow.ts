@@ -137,7 +137,7 @@ export function useGameFlow(): UseGameFlowResult {
       return;
     }
 
-    if (id === 'tiltGuess' || id === 'liveQuiz') {
+    if (id === 'tiltGuess' || id === 'liveQuiz' || id === 'spotlight') {
       return;
     }
 

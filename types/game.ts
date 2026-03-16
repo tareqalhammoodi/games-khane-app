@@ -9,7 +9,7 @@ export type GameId =
   | 'emojiDecode';
 
 export type AppScreen = 'home' | 'game' | 'wheel';
-export type PlayableId = GameId | 'wheel' | 'tiltGuess' | 'liveQuiz';
+export type PlayableId = GameId | 'wheel' | 'tiltGuess' | 'liveQuiz' | 'spotlight';
 
 export type GameApiEndpoint =
   | '/api/truth-dare'

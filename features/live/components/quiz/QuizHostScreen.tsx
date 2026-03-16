@@ -1,11 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import type { Player } from '@/features/live/types/live';
+import RoomCodeCard from '@/features/live/components/common/RoomCodeCard';
+import RoomShareCard from '@/features/live/components/common/RoomShareCard';
+import type { LiveStatus, Player } from '@/features/live/types';
 
-interface HostScreenProps {
+interface QuizHostScreenProps {
   roomCode: string;
-  status: 'lobby' | 'question' | 'results' | 'finished' | 'idle';
+  status: LiveStatus | 'idle';
   players: Player[];
   questionText: string | null;
   voteCounts: number[];
@@ -17,7 +18,7 @@ interface HostScreenProps {
   onStartOver: () => void;
 }
 
-function statusLabel(status: HostScreenProps['status']): string {
+function statusLabel(status: QuizHostScreenProps['status']): string {
   if (status === 'question') {
     return 'Question Live';
   }
@@ -37,7 +38,7 @@ function statusLabel(status: HostScreenProps['status']): string {
   return 'Ready';
 }
 
-export default function HostScreen({
+export default function QuizHostScreen({
   roomCode,
   status,
   players,
@@ -49,45 +50,7 @@ export default function HostScreen({
   onNextQuestion,
   onEndGame,
   onStartOver
-}: HostScreenProps) {
-  const [copyFeedback, setCopyFeedback] = useState<'idle' | 'copied' | 'failed'>('idle');
-
-  const joinUrl = useMemo(() => {
-    if (!roomCode) {
-      return '';
-    }
-
-    if (typeof window !== 'undefined') {
-      return `${window.location.origin}/live/${roomCode}`;
-    }
-
-    return `/live/${roomCode}`;
-  }, [roomCode]);
-
-  const qrCodeImageUrl = useMemo(() => {
-    if (!joinUrl) {
-      return '';
-    }
-
-    return `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(joinUrl)}`;
-  }, [joinUrl]);
-
-  const handleCopyJoinLink = async () => {
-    if (!joinUrl || !navigator?.clipboard) {
-      setCopyFeedback('failed');
-      return;
-    }
-
-    try {
-      await navigator.clipboard.writeText(joinUrl);
-      setCopyFeedback('copied');
-      window.setTimeout(() => setCopyFeedback('idle'), 1600);
-    } catch {
-      setCopyFeedback('failed');
-      window.setTimeout(() => setCopyFeedback('idle'), 1600);
-    }
-  };
-
+}: QuizHostScreenProps) {
   return (
     <section className="live-shell">
       <div className="live-header-row">
@@ -95,21 +58,9 @@ export default function HostScreen({
         <span className="live-status-pill">{statusLabel(status)}</span>
       </div>
 
-      <div className="live-room-box">
-        <span>Room Code</span>
-        <strong>{roomCode || '------'}</strong>
-      </div>
+      <RoomCodeCard roomCode={roomCode} />
 
-      {joinUrl ? (
-        <div className="live-panel live-qr-panel">
-          <h2 className="live-section-title">Scan QR to Join</h2>
-          <img src={qrCodeImageUrl} alt="Join room QR code" className="live-qr-image" />
-          <p className="live-qr-url">{joinUrl}</p>
-          <button type="button" className="live-btn-neutral live-copy-btn" onClick={handleCopyJoinLink}>
-            {copyFeedback === 'copied' ? 'Link Copied' : copyFeedback === 'failed' ? 'Copy Failed' : 'Copy Join Link'}
-          </button>
-        </div>
-      ) : null}
+      <RoomShareCard roomCode={roomCode} joinPathBase="/live" />
 
       <div className="live-panel">
         <h2 className="live-section-title">Players ({players.length})</h2>

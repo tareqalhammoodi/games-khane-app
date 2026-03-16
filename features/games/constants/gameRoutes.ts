@@ -10,6 +10,7 @@ export const GAME_ROUTES: Record<PlayableId, string> = {
   riddles: '/riddles',
   emojiDecode: '/emoji-decode',
   liveQuiz: '/live',
+  spotlight: '/spotlight',
   tiltGuess: '/tilt-guess',
   wheel: '/wheel'
 } as const;

@@ -2,7 +2,7 @@
 
 import { io, type Socket } from 'socket.io-client';
 
-import type { ClientToServerEvents, ServerToClientEvents } from '@/features/live/types/live';
+import type { ClientToServerEvents, ServerToClientEvents } from '@/features/live/types';
 
 type LiveSocket = Socket<ServerToClientEvents, ClientToServerEvents>;
 

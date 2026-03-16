@@ -72,6 +72,12 @@ export const HOME_ITEMS: HomeItem[] = [
     subtitle: 'Host. Join. Compete. Test your knowledge together!',
   },
   {
+    id: 'spotlight',
+    icon: '🎤',
+    title: 'Hot Seat Live',
+    subtitle: 'Anonymous questions, reactions, and guess who asked.',
+  },
+  {
     id: 'tiltGuess',
     icon: '📱',
     title: 'Tilt & Guess',

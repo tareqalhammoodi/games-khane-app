@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import RoomCodeCard from '@/features/live/components/common/RoomCodeCard';
 
 interface PlayerJoinScreenProps {
   roomCode: string;
@@ -20,10 +21,7 @@ export default function PlayerJoinScreen({
   return (
     <section className="live-shell">
       <h1 className="live-title">Join Room</h1>
-      <div className="live-room-box">
-        <span>Room Code</span>
-        <strong>{roomCode}</strong>
-      </div>
+      <RoomCodeCard roomCode={roomCode} />
 
       <div className="live-panel">
         <label htmlFor="nickname" className="live-label">
