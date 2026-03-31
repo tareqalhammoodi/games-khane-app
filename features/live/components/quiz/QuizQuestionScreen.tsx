@@ -27,15 +27,22 @@ export default function QuizQuestionScreen({
 }: QuizQuestionScreenProps) {
   const total = Math.max(1, timerTotalSeconds || 15);
   const timerWidth = `${Math.max(0, Math.min(100, (secondsLeft / total) * 100))}%`;
+  const isImageRound = Boolean(question.imageDataUrl);
 
   return (
     <section className="live-shell">
       <div className="live-header-row">
         <h1 className="live-title">
-          Question {questionIndex + 1}/{totalQuestions}
+          {isImageRound ? 'Photo' : 'Question'} {questionIndex + 1}/{totalQuestions}
         </h1>
         <span className="live-timer-pill">{secondsLeft}s</span>
       </div>
+
+      {question.imageDataUrl ? (
+        <div className="live-image-stage">
+          <img src={question.imageDataUrl} alt="Current round visual" className="live-round-image" />
+        </div>
+      ) : null}
 
       <p className="live-question-copy live-question-copy--large">{question.prompt}</p>
 
@@ -61,6 +68,7 @@ export default function QuizQuestionScreen({
       <p className="live-progress">
         {answeredCount}/{totalPlayers} answered
       </p>
+      {isImageRound ? <p className="live-muted">If this is your photo, sit this round out and let everyone else guess.</p> : null}
       {hasAnswered ? <p className="live-muted">Answer submitted. Waiting for results.</p> : null}
     </section>
   );

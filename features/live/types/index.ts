@@ -1,5 +1,6 @@
 export type { LiveMode, LiveStatus, LiveRole, GameFinishedReason } from '@/features/live/types/core';
 export type { Question, Player } from '@/features/live/types/quiz';
+export type { ThrowbackConfig } from '@/features/live/types/throwback';
 export type {
   SpotlightChoice,
   SpotlightQuestion,

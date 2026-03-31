@@ -11,7 +11,8 @@ import {
   type Question,
   type SpotlightChoice,
   type SpotlightPlayer,
-  type SpotlightRoundResults
+  type SpotlightRoundResults,
+  type ThrowbackConfig
 } from '@/features/live/types';
 
 type HookStatus = LiveStatus | 'idle';
@@ -27,6 +28,8 @@ interface UseLiveGameResult {
   role: LiveRole | null;
   status: HookStatus;
   mode: LiveMode | null;
+  inspectedRoomMode: LiveMode | null;
+  inspectedRoomStatus: LiveStatus | null;
   socketId: string | null;
   players: Player[];
   leaderboard: Player[];
@@ -46,6 +49,11 @@ interface UseLiveGameResult {
   spotlightRoundIndex: number;
   spotlightChoices: SpotlightChoice[];
   spotlightQuestionText: string | null;
+  throwbackConfig: ThrowbackConfig | null;
+  throwbackPrompt: string | null;
+  throwbackImageLabel: string | null;
+  throwbackUploadedCount: number;
+  hasUploadedThrowbackImage: boolean;
   spotlightSubmittedCount: number;
   spotlightTotalWriters: number;
   spotlightReactionCounts: [number, number, number, number];
@@ -64,12 +72,13 @@ interface UseLiveGameResult {
   isCreatingRoom: boolean;
   isJoiningRoom: boolean;
   setRoomCode: (value: string) => void;
-  createRoom: (options?: { mode?: LiveMode; questions?: Question[] }) => void;
-  joinRoom: (nickname: string) => void;
+  createRoom: (options?: { mode?: LiveMode; questions?: Question[]; throwbackConfig?: ThrowbackConfig }) => void;
+  joinRoom: (nickname: string, throwbackImageDataUrl?: string) => void;
   startGame: () => void;
   nextQuestion: () => void;
   endGame: () => void;
   submitAnswer: (optionIndex: number) => void;
+  submitThrowbackImage: (imageDataUrl: string) => void;
   submitSpotlightQuestion: (text: string) => void;
   selectSpotlightQuestion: (questionId: string) => void;
   openSpotlightVotes: () => void;
@@ -94,6 +103,8 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
   const [role, setRole] = useState<LiveRole | null>(null);
   const [status, setStatus] = useState<HookStatus>('idle');
   const [mode, setMode] = useState<LiveMode | null>(null);
+  const [inspectedRoomMode, setInspectedRoomMode] = useState<LiveMode | null>(null);
+  const [inspectedRoomStatus, setInspectedRoomStatus] = useState<LiveStatus | null>(null);
   const [socketId, setSocketId] = useState<string | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [leaderboard, setLeaderboard] = useState<Player[]>([]);
@@ -116,6 +127,8 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
   const [spotlightRoundIndex, setSpotlightRoundIndex] = useState(0);
   const [spotlightChoices, setSpotlightChoices] = useState<SpotlightChoice[]>([]);
   const [spotlightQuestionText, setSpotlightQuestionText] = useState<string | null>(null);
+  const [throwbackConfig, setThrowbackConfig] = useState<ThrowbackConfig | null>(null);
+  const [throwbackUploadedCount, setThrowbackUploadedCount] = useState(0);
   const [spotlightSubmittedCount, setSpotlightSubmittedCount] = useState(0);
   const [spotlightTotalWriters, setSpotlightTotalWriters] = useState(0);
   const [spotlightReactionCounts, setSpotlightReactionCounts] = useState<[number, number, number, number]>([0, 0, 0, 0]);
@@ -185,6 +198,11 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           setSpotlightSkipReason(null);
         };
 
+        const resetThrowbackState = () => {
+          setThrowbackConfig(null);
+          setThrowbackUploadedCount(0);
+        };
+
         const resetSpotlightInteractions = () => {
           setHasSubmittedQuestion(false);
           setHasReacted(false);
@@ -215,11 +233,15 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           status: LiveStatus;
           totalQuestions: number;
           mode: LiveMode;
+          throwbackConfig: ThrowbackConfig | null;
+          uploadedCount: number;
         }) => {
           setRole('host');
           setRoomCodeState(payload.roomCode);
           setStatus(payload.status);
           setMode(payload.mode);
+          setInspectedRoomMode(payload.mode);
+          setInspectedRoomStatus(payload.status);
           setPlayers(payload.players);
           setLeaderboard(sortLeaderboard(payload.players));
           setTotalQuestions(payload.totalQuestions);
@@ -233,17 +255,34 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           setSpotlightRoundIndex(0);
           resetSpotlightRoundState();
           resetSpotlightInteractions();
+          setThrowbackConfig(payload.throwbackConfig);
+          setThrowbackUploadedCount(payload.uploadedCount);
           setIsCreatingRoom(false);
           setErrorMessage(null);
         };
 
-        const onPlayerJoined = (payload: { roomCode: string; players: Player[] }) => {
+        const onPlayerJoined = (payload: {
+          roomCode: string;
+          players: Player[];
+          status: LiveStatus;
+          totalQuestions: number;
+          mode: LiveMode;
+          throwbackConfig: ThrowbackConfig | null;
+          uploadedCount: number;
+        }) => {
           if (isRoomMismatch(payload.roomCode)) {
             return;
           }
 
           setPlayers(payload.players);
+          setStatus(payload.status);
+          setMode(payload.mode);
+          setInspectedRoomMode(payload.mode);
+          setInspectedRoomStatus(payload.status);
           setTotalPlayers(payload.players.length);
+          setTotalQuestions(payload.totalQuestions);
+          setThrowbackConfig(payload.throwbackConfig);
+          setThrowbackUploadedCount(payload.uploadedCount);
 
           if (roleRef.current === 'host') {
             setLeaderboard(sortLeaderboard(payload.players));
@@ -255,10 +294,48 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
               setRole('player');
             }
 
-            setStatus((previousStatus) => (previousStatus === 'idle' ? 'lobby' : previousStatus));
+            setStatus(payload.status === 'lobby' ? 'lobby' : payload.status);
             setIsJoiningRoom(false);
             setErrorMessage(null);
           }
+        };
+
+        const onThrowbackLobbyUpdated = (payload: {
+          roomCode: string;
+          players: Player[];
+          uploadedCount: number;
+          totalPlayers: number;
+          throwbackConfig: ThrowbackConfig;
+        }) => {
+          if (isRoomMismatch(payload.roomCode)) {
+            return;
+          }
+
+          setMode('throwback');
+          setStatus('lobby');
+          setInspectedRoomMode('throwback');
+          setInspectedRoomStatus('lobby');
+          setPlayers(payload.players);
+          setTotalPlayers(payload.totalPlayers);
+          setThrowbackConfig(payload.throwbackConfig);
+          setThrowbackUploadedCount(payload.uploadedCount);
+        };
+
+        const onRoomInspected = (payload: {
+          roomCode: string;
+          mode: LiveMode;
+          status: LiveStatus;
+          throwbackConfig: ThrowbackConfig | null;
+        }) => {
+          if (isRoomMismatch(payload.roomCode)) {
+            return;
+          }
+
+          setInspectedRoomMode(payload.mode);
+          setInspectedRoomStatus(payload.status);
+          setMode((previousMode) => previousMode ?? payload.mode);
+          setThrowbackConfig(payload.throwbackConfig);
+          setErrorMessage(null);
         };
 
         const onGameStarted = (payload: {
@@ -271,6 +348,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           }
 
           setMode('quiz');
+          setInspectedRoomMode('quiz');
           setStatus('question');
           setQuestionIndex(payload.questionIndex);
           setTotalQuestions(payload.totalQuestions);
@@ -290,12 +368,14 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
             return;
           }
 
-          setMode('quiz');
+          setMode(payload.question.imageDataUrl ? 'throwback' : 'quiz');
+          setInspectedRoomMode(payload.question.imageDataUrl ? 'throwback' : 'quiz');
           setStatus('question');
           setCurrentQuestion(payload.question);
           setQuestionIndex(payload.questionIndex);
           setTotalQuestions(payload.totalQuestions);
           resetQuizRoundState();
+          setVoteCounts(Array.from({ length: payload.question.options.length }, () => 0));
           setPhaseEndsAt(payload.endsAt);
           setPhaseDurationMs(LIVE_QUESTION_COUNTDOWN_SECONDS * 1000);
           setClockNow(Date.now());
@@ -349,6 +429,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           }
 
           setMode('spotlight');
+          setInspectedRoomMode('spotlight');
           setStatus('writing');
           setSpotlightId(payload.spotlight.id);
           setSpotlightNickname(payload.spotlight.nickname);
@@ -385,6 +466,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           }
 
           setMode('spotlight');
+          setInspectedRoomMode('spotlight');
           setStatus('choice');
           setSpotlightId(payload.spotlight.id);
           setSpotlightNickname(payload.spotlight.nickname);
@@ -406,6 +488,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           }
 
           setMode('spotlight');
+          setInspectedRoomMode('spotlight');
           setStatus('reveal');
           setSpotlightId(payload.spotlight.id);
           setSpotlightNickname(payload.spotlight.nickname);
@@ -444,6 +527,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           }
 
           setMode('spotlight');
+          setInspectedRoomMode('spotlight');
           setStatus('guess');
           setSpotlightGuessOptions(payload.choices);
           setSpotlightGuessAnswered(0);
@@ -475,6 +559,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           }
 
           setMode('spotlight');
+          setInspectedRoomMode('spotlight');
           setStatus('results');
           setSpotlightResults(payload.results);
           setSpotlightQuestionText(payload.results.questionText);
@@ -488,6 +573,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           }
 
           setMode('spotlight');
+          setInspectedRoomMode('spotlight');
           setStatus('results');
           setSpotlightSkipReason(payload.reason);
           setSpotlightResults(null);
@@ -524,8 +610,10 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
         socket.on('room_created', onRoomCreated);
+        socket.on('room_inspected', onRoomInspected);
         socket.on('player_joined', onPlayerJoined);
         socket.on('game_started', onGameStarted);
+        socket.on('throwback_lobby_updated', onThrowbackLobbyUpdated);
         socket.on('question_started', onQuestionStarted);
         socket.on('vote_update', onVoteUpdate);
         socket.on('question_results', onQuestionResults);
@@ -552,8 +640,10 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
           socket.off('connect', onConnect);
           socket.off('disconnect', onDisconnect);
           socket.off('room_created', onRoomCreated);
+          socket.off('room_inspected', onRoomInspected);
           socket.off('player_joined', onPlayerJoined);
           socket.off('game_started', onGameStarted);
+          socket.off('throwback_lobby_updated', onThrowbackLobbyUpdated);
           socket.off('question_started', onQuestionStarted);
           socket.off('vote_update', onVoteUpdate);
           socket.off('question_results', onQuestionResults);
@@ -573,6 +663,8 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
       } catch {
         if (isMounted) {
           setErrorMessage('Could not connect to live server.');
+          setThrowbackConfig(null);
+          setThrowbackUploadedCount(0);
         }
       }
 
@@ -597,6 +689,17 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
       }
     };
   }, []);
+
+  useEffect(() => {
+    const socket = socketRef.current;
+    const normalizedCode = normalizeRoomCode(initialRoomCode ?? roomCodeRef.current);
+
+    if (!socket || !socket.connected || !normalizedCode || roleRef.current === 'host' || role === 'player') {
+      return;
+    }
+
+    socket.emit('inspect_room', { roomCode: normalizedCode });
+  }, [initialRoomCode, isConnected, role]);
 
   useEffect(() => {
     if (!phaseEndsAt) {
@@ -636,7 +739,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
     setErrorMessage(null);
   }, []);
 
-  const createRoom = useCallback((options?: { mode?: LiveMode; questions?: Question[] }) => {
+  const createRoom = useCallback((options?: { mode?: LiveMode; questions?: Question[]; throwbackConfig?: ThrowbackConfig }) => {
     const socket = socketRef.current;
     if (!socket) {
       setErrorMessage('Live server is not ready yet.');
@@ -648,16 +751,21 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
     setIsCreatingRoom(true);
     const questions = options?.questions ?? [];
     const mode = options?.mode;
+    const throwbackConfig = options?.throwbackConfig;
 
-    if (questions.length > 0 || mode) {
-      socket.emit('create_room', { questions: questions.length > 0 ? questions : undefined, mode });
+    if (questions.length > 0 || mode || throwbackConfig) {
+      socket.emit('create_room', {
+        questions: questions.length > 0 ? questions : undefined,
+        mode,
+        throwbackConfig
+      });
       return;
     }
 
     socket.emit('create_room');
   }, []);
 
-  const joinRoom = useCallback((nickname: string) => {
+  const joinRoom = useCallback((nickname: string, throwbackImageDataUrl?: string) => {
     const socket = socketRef.current;
     if (!socket) {
       setErrorMessage('Live server is not ready yet.');
@@ -682,7 +790,8 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
     setIsJoiningRoom(true);
     socket.emit('join_room', {
       roomCode: normalizedCode,
-      nickname: trimmedNickname.slice(0, 24)
+      nickname: trimmedNickname.slice(0, 24),
+      throwbackImageDataUrl: throwbackImageDataUrl?.trim() || undefined
     });
   }, []);
 
@@ -743,6 +852,27 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
       optionIndex
     });
   }, [hasAnswered]);
+
+  const submitThrowbackImage = useCallback((imageDataUrl: string) => {
+    if (roleRef.current !== 'player') {
+      return;
+    }
+
+    const socket = socketRef.current;
+    if (!socket || !roomCodeRef.current) {
+      return;
+    }
+
+    const trimmed = imageDataUrl.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    socket.emit('submit_throwback_image', {
+      roomCode: roomCodeRef.current,
+      imageDataUrl: trimmed
+    });
+  }, []);
 
   const submitSpotlightQuestion = useCallback((text: string) => {
     if (roleRef.current !== 'player' || hasSubmittedQuestion) {
@@ -834,6 +964,14 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
     socket.emit('next_spotlight_round', { roomCode: roomCodeRef.current });
   }, []);
 
+  const hasUploadedThrowbackImage = useMemo(() => {
+    if (!socketId) {
+      return false;
+    }
+
+    return players.some((player) => player.id === socketId && player.hasUploadedImage);
+  }, [players, socketId]);
+
   return {
     isConnected,
     errorMessage,
@@ -841,6 +979,8 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
     role,
     status,
     mode,
+    inspectedRoomMode,
+    inspectedRoomStatus,
     socketId,
     players,
     leaderboard,
@@ -860,6 +1000,11 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
     spotlightRoundIndex,
     spotlightChoices,
     spotlightQuestionText,
+    throwbackConfig,
+    throwbackPrompt: throwbackConfig?.prompt ?? null,
+    throwbackImageLabel: throwbackConfig?.imageLabel ?? null,
+    throwbackUploadedCount,
+    hasUploadedThrowbackImage,
     spotlightSubmittedCount,
     spotlightTotalWriters,
     spotlightReactionCounts,
@@ -884,6 +1029,7 @@ export function useLiveGame({ initialRoomCode }: UseLiveGameOptions = {}): UseLi
     nextQuestion,
     endGame,
     submitAnswer,
+    submitThrowbackImage,
     submitSpotlightQuestion,
     selectSpotlightQuestion,
     openSpotlightVotes,
