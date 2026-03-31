@@ -5,15 +5,18 @@ import type {
   SpotlightPlayer,
   SpotlightRoundResults
 } from '@/features/live/types/spotlight';
+import type { ThrowbackConfig } from '@/features/live/types/throwback';
 
 export type ClientToServerEvents = {
-  create_room: (payload?: { questions?: Question[]; mode?: LiveMode }) => void;
+  create_room: (payload?: { questions?: Question[]; mode?: LiveMode; throwbackConfig?: ThrowbackConfig }) => void;
+  inspect_room: (payload: { roomCode: string }) => void;
   start_game: (payload: { roomCode: string }) => void;
   next_question: (payload: { roomCode: string }) => void;
   next_spotlight_round: (payload: { roomCode: string }) => void;
   end_game: (payload: { roomCode: string }) => void;
-  join_room: (payload: { roomCode: string; nickname: string }) => void;
+  join_room: (payload: { roomCode: string; nickname: string; throwbackImageDataUrl?: string }) => void;
   submit_answer: (payload: { roomCode: string; optionIndex: number }) => void;
+  submit_throwback_image: (payload: { roomCode: string; imageDataUrl: string }) => void;
   submit_spotlight_question: (payload: { roomCode: string; text: string }) => void;
   select_spotlight_question: (payload: { roomCode: string; questionId: string }) => void;
   open_spotlight_votes: (payload: { roomCode: string }) => void;
@@ -22,6 +25,12 @@ export type ClientToServerEvents = {
 };
 
 export type ServerToClientEvents = {
+  room_inspected: (payload: {
+    roomCode: string;
+    mode: LiveMode;
+    status: LiveStatus;
+    throwbackConfig: ThrowbackConfig | null;
+  }) => void;
   room_created: (payload: {
     roomCode: string;
     hostId: string;
@@ -29,9 +38,26 @@ export type ServerToClientEvents = {
     status: LiveStatus;
     totalQuestions: number;
     mode: LiveMode;
+    throwbackConfig: ThrowbackConfig | null;
+    uploadedCount: number;
   }) => void;
-  player_joined: (payload: { roomCode: string; players: Player[] }) => void;
+  player_joined: (payload: {
+    roomCode: string;
+    players: Player[];
+    status: LiveStatus;
+    totalQuestions: number;
+    mode: LiveMode;
+    throwbackConfig: ThrowbackConfig | null;
+    uploadedCount: number;
+  }) => void;
   game_started: (payload: { roomCode: string; questionIndex: number; totalQuestions: number }) => void;
+  throwback_lobby_updated: (payload: {
+    roomCode: string;
+    players: Player[];
+    uploadedCount: number;
+    totalPlayers: number;
+    throwbackConfig: ThrowbackConfig;
+  }) => void;
   question_started: (payload: {
     roomCode: string;
     questionIndex: number;

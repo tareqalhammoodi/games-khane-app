@@ -1061,6 +1061,18 @@ p {
   font-weight: 700;
 }
 
+.live-file-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .live-shell button {
   width: 100%;
   border: 1px solid transparent;
@@ -1165,6 +1177,64 @@ p {
 .live-btn-neutral {
   background: #2a2d43;
   border-color: #3f425c !important;
+}
+
+.live-file-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto !important;
+  min-width: 128px;
+  margin-bottom: 0;
+  text-align: center;
+  flex-shrink: 0;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  letter-spacing: 0.01em;
+  color: #f4f7ff !important;
+  border: 1px solid rgba(255, 255, 255, 0.28) !important;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(31, 34, 51, 0.92)), radial-gradient(circle at top, rgba(139, 228, 255, 0.1), transparent 58%);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    background 0.14s ease,
+    border-color 0.14s ease,
+    filter 0.14s ease;
+}
+
+.live-file-trigger:hover {
+  transform: translateY(-1px);
+  border-color: rgba(139, 228, 255, 0.42) !important;
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.1), rgba(39, 42, 61, 0.96)),
+    radial-gradient(circle at top, rgba(139, 228, 255, 0.14), transparent 58%);
+  box-shadow:
+    0 14px 26px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.live-file-trigger:active {
+  transform: translateY(0);
+}
+
+.live-file-name {
+  margin: 0;
+  color: #cbd2eb;
+  font-size: 0.84rem;
+  text-align: left;
+  word-break: break-word;
+  flex: 1;
+}
+
+.live-file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 .live-copy-btn {
@@ -1274,6 +1344,28 @@ p {
   border-bottom: none;
 }
 
+.live-player-stack {
+  display: grid;
+  gap: 4px;
+}
+
+.live-upload-pill {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  color: #ffd6db;
+  border: 1px solid rgba(255, 159, 174, 0.32);
+  background: rgba(226, 27, 60, 0.12);
+}
+
+.live-upload-pill--ready {
+  color: #d9ffe4;
+  border-color: rgba(109, 226, 156, 0.4);
+  background: rgba(38, 137, 12, 0.2);
+}
+
 .live-leader--first {
   color: #ffe8a4;
 }
@@ -1361,6 +1453,36 @@ p {
   border-radius: 999px;
   background: #fff;
   transition: width 0.2s linear;
+}
+
+.live-image-stage {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+}
+
+.live-image-stage--results {
+  margin-bottom: 14px;
+}
+
+.live-round-image,
+.live-image-preview {
+  display: block;
+  width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+  border-radius: 14px;
+  background: rgba(8, 9, 19, 0.88);
+}
+
+.live-image-preview-card {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .live-options-grid {

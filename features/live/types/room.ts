@@ -1,6 +1,7 @@
 import type { LiveMode, LiveStatus } from '@/features/live/types/core';
 import type { Player, Question } from '@/features/live/types/quiz';
 import type { SpotlightQuestion } from '@/features/live/types/spotlight';
+import type { ThrowbackConfig } from '@/features/live/types/throwback';
 
 export type Room = {
   code: string;
@@ -20,4 +21,7 @@ export type Room = {
   spotlightSelectedQuestion: SpotlightQuestion | null;
   spotlightReactions: Record<string, number>;
   spotlightGuesses: Record<string, string>;
+  throwbackConfig: ThrowbackConfig | null;
+  throwbackUploads: Record<string, string>;
+  throwbackRoundPlayerIds: string[];
 };

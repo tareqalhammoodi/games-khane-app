@@ -18,9 +18,17 @@ export default function QuizResultsScreen({
       <h1 className="live-title">Results</h1>
 
       <div className="live-panel">
+        {question?.imageDataUrl ? (
+          <div className="live-image-stage live-image-stage--results">
+            <img src={question.imageDataUrl} alt="Round reveal" className="live-round-image" />
+          </div>
+        ) : null}
+
         <p className="live-question-copy">{question?.prompt ?? 'Round complete'}</p>
         {question && typeof correctOptionIndex === 'number' ? (
-          <p className="live-correct-answer">Correct answer: {question.options[correctOptionIndex]}</p>
+          <p className="live-correct-answer">
+            {question.imageDataUrl ? 'Correct match' : 'Correct answer'}: {question.options[correctOptionIndex]}
+          </p>
         ) : null}
 
         <ul className="live-results-list">

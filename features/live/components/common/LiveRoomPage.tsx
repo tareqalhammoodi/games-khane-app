@@ -11,6 +11,7 @@ import SpotlightGuessScreen from '@/features/live/components/spotlight/Spotlight
 import SpotlightRevealScreen from '@/features/live/components/spotlight/SpotlightRevealScreen';
 import SpotlightResultsScreen from '@/features/live/components/spotlight/SpotlightResultsScreen';
 import SpotlightWritingScreen from '@/features/live/components/spotlight/SpotlightWritingScreen';
+import ThrowbackUploadScreen from '@/features/live/components/throwback/ThrowbackUploadScreen';
 import { useLiveGame } from '@/features/live/hooks/useLiveGame';
 
 interface LiveRoomPageProps {
@@ -25,6 +26,7 @@ export default function LiveRoomPage({ roomCode, startOverPath = '/live', forceS
     status,
     role,
     mode,
+    inspectedRoomMode,
     socketId,
     players,
     leaderboard,
@@ -44,6 +46,10 @@ export default function LiveRoomPage({ roomCode, startOverPath = '/live', forceS
     spotlightRoundIndex,
     spotlightChoices,
     spotlightQuestionText,
+    throwbackPrompt,
+    throwbackImageLabel,
+    throwbackUploadedCount,
+    hasUploadedThrowbackImage,
     spotlightSubmittedCount,
     spotlightTotalWriters,
     spotlightReactionCounts,
@@ -63,6 +69,7 @@ export default function LiveRoomPage({ roomCode, startOverPath = '/live', forceS
     isJoiningRoom,
     joinRoom,
     submitAnswer,
+    submitThrowbackImage,
     submitSpotlightQuestion,
     selectSpotlightQuestion,
     openSpotlightVotes,
@@ -103,6 +110,8 @@ export default function LiveRoomPage({ roomCode, startOverPath = '/live', forceS
             roomCode={roomCode}
             errorMessage={errorMessage}
             isJoining={isJoiningRoom}
+            roomMode={inspectedRoomMode}
+            throwbackImageLabel={throwbackImageLabel}
             onJoin={joinRoom}
           />
         </div>
@@ -111,6 +120,25 @@ export default function LiveRoomPage({ roomCode, startOverPath = '/live', forceS
   }
 
   if (status === 'lobby') {
+    if (mode === 'throwback') {
+      return (
+        <main>
+          <div className="app">
+            <ThrowbackUploadScreen
+              roomCode={roomCode}
+              prompt={throwbackPrompt}
+              imageLabel={throwbackImageLabel}
+              uploadedCount={throwbackUploadedCount}
+              totalPlayers={totalPlayers}
+              hasUploadedImage={hasUploadedThrowbackImage}
+              errorMessage={errorMessage}
+              onSubmit={submitThrowbackImage}
+            />
+          </div>
+        </main>
+      );
+    }
+
     return (
       <main>
         <div className="app">
@@ -141,6 +169,7 @@ export default function LiveRoomPage({ roomCode, startOverPath = '/live', forceS
             totalPlayers={totalPlayers}
             onSelectOption={submitAnswer}
           />
+          {errorMessage ? <p className="live-error">{errorMessage}</p> : null}
         </div>
       </main>
     );

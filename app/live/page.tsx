@@ -5,6 +5,7 @@ import LiveHomeScreen from '@/features/live/components/common/LiveHomeScreen';
 import QuizLeaderboardScreen from '@/features/live/components/quiz/QuizLeaderboardScreen';
 import QuizHostScreen from '@/features/live/components/quiz/QuizHostScreen';
 import QuizResultsScreen from '@/features/live/components/quiz/QuizResultsScreen';
+import ThrowbackHostScreen from '@/features/live/components/throwback/ThrowbackHostScreen';
 import { useLiveGame } from '@/features/live/hooks/useLiveGame';
 
 export default function LiveHomePage() {
@@ -15,6 +16,7 @@ export default function LiveHomePage() {
     roomCode,
     role,
     status,
+    mode,
     players,
     leaderboard,
     currentQuestion,
@@ -22,6 +24,10 @@ export default function LiveHomePage() {
     correctOptionIndex,
     answeredCount,
     totalPlayers,
+    throwbackPrompt,
+    throwbackImageLabel,
+    throwbackUploadedCount,
+    throwbackConfig,
     isCreatingRoom,
     setRoomCode,
     createRoom,
@@ -37,6 +43,14 @@ export default function LiveHomePage() {
   };
 
   const handleStartOver = () => {
+    if (mode === 'throwback') {
+      createRoom({
+        mode: 'throwback',
+        throwbackConfig: throwbackConfig ?? undefined
+      });
+      return;
+    }
+
     createRoom({ mode: 'quiz' });
   };
 
@@ -61,10 +75,10 @@ export default function LiveHomePage() {
             onRoomCodeChange={setRoomCode}
             onHostGame={createRoom}
             onJoinGame={handleJoinGame}
-            availableModes={['quiz']}
+            availableModes={['quiz', 'throwback']}
             defaultMode="quiz"
             title="GameKhane Live"
-            subtitle="Real-time quiz rooms for friends and teams."
+            subtitle="Host quiz rounds or photo-based throwback guessing rooms."
           />
         </div>
       </main>
@@ -79,19 +93,39 @@ export default function LiveHomePage() {
             ← Back to Main
           </button>
         </div>
-        <QuizHostScreen
-          roomCode={roomCode}
-          status={status}
-          players={players}
-          questionText={currentQuestion?.prompt ?? null}
-          voteCounts={voteCounts}
-          answeredCount={answeredCount}
-          totalPlayers={totalPlayers}
-          onStartGame={startGame}
-          onNextQuestion={nextQuestion}
-          onEndGame={endGame}
-          onStartOver={handleStartOver}
-        />
+        {mode === 'throwback' ? (
+          <ThrowbackHostScreen
+            roomCode={roomCode}
+            status={status}
+            players={players}
+            prompt={throwbackPrompt}
+            imageLabel={throwbackImageLabel}
+            uploadedCount={throwbackUploadedCount}
+            questionText={currentQuestion?.prompt ?? null}
+            imageDataUrl={currentQuestion?.imageDataUrl ?? null}
+            voteCounts={voteCounts}
+            answeredCount={answeredCount}
+            totalPlayers={totalPlayers}
+            onStartGame={startGame}
+            onNextQuestion={nextQuestion}
+            onEndGame={endGame}
+            onStartOver={handleStartOver}
+          />
+        ) : (
+          <QuizHostScreen
+            roomCode={roomCode}
+            status={status}
+            players={players}
+            questionText={currentQuestion?.prompt ?? null}
+            voteCounts={voteCounts}
+            answeredCount={answeredCount}
+            totalPlayers={totalPlayers}
+            onStartGame={startGame}
+            onNextQuestion={nextQuestion}
+            onEndGame={endGame}
+            onStartOver={handleStartOver}
+          />
+        )}
 
         {status === 'results' ? (
           <QuizResultsScreen

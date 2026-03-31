@@ -1,4 +1,4 @@
-export type LiveMode = 'quiz' | 'spotlight';
+export type LiveMode = 'quiz' | 'spotlight' | 'throwback';
 
 export type LiveStatus =
   | 'lobby'

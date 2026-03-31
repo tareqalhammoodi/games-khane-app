@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { LiveMode, Question } from "@/features/live/types";
+import type { LiveMode, Question, ThrowbackConfig } from "@/features/live/types";
 
 type HostMode = "default" | "custom";
 
@@ -18,7 +18,7 @@ interface LiveHomeScreenProps {
   isConnected: boolean;
   isCreatingRoom: boolean;
   onRoomCodeChange: (value: string) => void;
-  onHostGame: (options?: { mode?: LiveMode; questions?: Question[] }) => void;
+  onHostGame: (options?: { mode?: LiveMode; questions?: Question[]; throwbackConfig?: ThrowbackConfig }) => void;
   onJoinGame: () => void;
   availableModes?: LiveMode[];
   defaultMode?: LiveMode;
@@ -62,7 +62,7 @@ export default function LiveHomeScreen({
   onRoomCodeChange,
   onHostGame,
   onJoinGame,
-  availableModes = ["quiz", "spotlight"],
+  availableModes = ["quiz", "spotlight", "throwback"],
   defaultMode,
   title = "GameKhane Live",
   subtitle = "Real-time rooms for quizzes or spotlight rounds.",
@@ -78,6 +78,8 @@ export default function LiveHomeScreen({
   const [customQuestions, setCustomQuestions] = useState<QuestionDraft[]>([
     createQuestionDraft(),
   ]);
+  const [throwbackPrompt, setThrowbackPrompt] = useState("");
+  const [throwbackImageLabel, setThrowbackImageLabel] = useState("");
   const [localError, setLocalError] = useState<string | null>(null);
 
   const validCustomQuestions = useMemo(
@@ -89,6 +91,31 @@ export default function LiveHomeScreen({
     if (liveMode === "spotlight") {
       setLocalError(null);
       onHostGame({ mode: "spotlight" });
+      return;
+    }
+
+    if (liveMode === "throwback") {
+      const normalizedPrompt = throwbackPrompt.trim();
+      const normalizedLabel = throwbackImageLabel.trim();
+
+      if (normalizedPrompt.length < 3) {
+        setLocalError("Add a prompt for players to guess from.");
+        return;
+      }
+
+      if (normalizedLabel.length < 2) {
+        setLocalError("Add a photo clue like childhood, beach day, or prom.");
+        return;
+      }
+
+      setLocalError(null);
+      onHostGame({
+        mode: "throwback",
+        throwbackConfig: {
+          prompt: normalizedPrompt,
+          imageLabel: normalizedLabel,
+        },
+      });
       return;
     }
 
@@ -144,6 +171,15 @@ export default function LiveHomeScreen({
                 Spotlight
               </button>
             ) : null}
+            {availableModes.includes("throwback") ? (
+              <button
+                type="button"
+                className={`live-mode-btn ${liveMode === "throwback" ? "live-mode-btn--active" : ""}`}
+                onClick={() => setLiveMode("throwback")}
+              >
+                Throwback
+              </button>
+            ) : null}
           </div>
         ) : null}
 
@@ -152,6 +188,38 @@ export default function LiveHomeScreen({
             Anonymous questions for one player at a time. Players react and
             guess who asked.
           </p>
+        ) : null}
+
+        {liveMode === "throwback" ? (
+          <div className="live-custom-builder">
+            <p className="live-muted" style={{ marginBottom: 10 }}>
+              Players join, upload a photo that matches your clue, then the room guesses whose photo is on screen.
+            </p>
+
+            <label htmlFor="throwback-prompt" className="live-label">
+              Guess prompt:
+            </label>
+            <input
+              id="throwback-prompt"
+              className="live-input"
+              value={throwbackPrompt}
+              onChange={(event) => setThrowbackPrompt(event.target.value)}
+              placeholder="Who is the handsome baby?"
+              maxLength={120}
+            />
+
+            <label htmlFor="throwback-image-label" className="live-label">
+              Photo clue:
+            </label>
+            <input
+              id="throwback-image-label"
+              className="live-input"
+              value={throwbackImageLabel}
+              onChange={(event) => setThrowbackImageLabel(event.target.value)}
+              placeholder="childhood"
+              maxLength={40}
+            />
+          </div>
         ) : null}
 
         {liveMode === "quiz" ? (
